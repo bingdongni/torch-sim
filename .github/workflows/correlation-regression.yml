@@ -1,0 +1,29 @@
+name: Correlation regression
+
+on:
+  push:
+    branches: ['ci/singleton-correlation-20261106']
+
+permissions:
+  contents: read
+
+jobs:
+  correlation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v8.2.0
+      - name: Install project and test dependencies
+        run: |
+          uv pip install 'torch>2' --index-url https://download.pytorch.org/whl/cpu --system
+          uv pip install -e '.[test]' 'ruff==0.17.1' --system
+      - name: Run correlation tests
+        run: pytest tests/test_correlations.py -q
+      - name: Check formatting and lint
+        run: |
+          ruff check torch_sim/properties/correlations.py tests/test_correlations.py
+          ruff format --check torch_sim/properties/correlations.py tests/test_correlations.py
