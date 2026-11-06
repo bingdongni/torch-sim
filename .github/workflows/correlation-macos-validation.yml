@@ -1,0 +1,40 @@
+name: macOS checks for singleton correlation fix
+
+on:
+  push:
+    branches: ['ci/singleton-macos-20261107']
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v8.2.0
+      - name: Install project and test dependencies
+        run: |
+          uv pip install 'torch>2' --index-url https://download.pytorch.org/whl/cpu --system
+          uv pip install -e '.[test]' --resolution=highest --system
+      - name: Run core tests
+        run: pytest --cov=torch_sim --cov-report=xml
+  mace:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install HDF5
+        run: brew install hdf5
+      - uses: astral-sh/setup-uv@v8.2.0
+      - name: Install project and MACE dependencies
+        run: uv pip install -e '.[test,mace]' 'setuptools>=70,<82' --resolution=lowest-direct --system
+      - name: Run MACE model tests
+        run: pytest -vv -ra -rs --cov=torch_sim --cov-report=xml tests/models/test_mace.py
